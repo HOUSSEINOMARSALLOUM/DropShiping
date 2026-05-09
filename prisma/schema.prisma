@@ -1,0 +1,362 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Security & Authentication Module
+model AdminUser {
+  id                String    @id @default(cuid())
+  email             String    @unique
+  passwordHash      String
+  twoFactorSecret   String?
+  isTwoFactorEnabled Boolean  @default(false)
+  lastLoginAt       DateTime?
+  
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+}
+
+// Single Admin Model
+model Admin {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Future proofing for settings
+  settings  AdminSettings?
+}
+
+model AdminSettings {
+  id        String   @id @default(cuid())
+  adminId   String   @unique
+  admin     Admin    @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  theme     String   @default("system")
+  language  String   @default("en")
+}
+
+// Dropshipping Module
+enum ProductStatus {
+  DRAFT
+  IMPORTED
+  ENRICHED
+  PUBLISHED
+  ARCHIVED
+}
+
+model Product {
+  id                 String        @id @default(cuid())
+  title              String
+  description        String?
+  price              Float
+  cost               Float
+  stock              Int           @default(0)
+  
+  // Sourcing
+  sourceUrl          String?       // AliExpress URL
+  vendor             String?
+  
+  // Media Storage
+  images             String[]      // Array of image URLs
+  
+  // AI Generation Pipeline
+  aiGeneratedContent Json?         // Store generated descriptions, ad copy, etc.
+  
+  // Status Tracking
+  status             ProductStatus @default(DRAFT)
+  
+  // Analytics
+  views              Int           @default(0)
+  sales              Int           @default(0)
+  conversionRate     Float         @default(0)
+  
+  // Shopify Publishing Prep
+  shopifyId          String?       @unique
+  shopifyUrl         String?
+  tags               String[]
+  
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+}
+
+model Order {
+  id          String   @id @default(cuid())
+  orderNumber String   @unique
+  total       Float
+  status      String   @default("PENDING")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+
+  @@index([status])
+  @@index([createdAt])
+}
+
+// CRM Module
+enum DealStage {
+  PROSPECT
+  QUALIFIED
+  NEGOTIATION
+  CLOSED_WON
+  CLOSED_LOST
+}
+
+enum WealthTier {
+  HIGH_NET_WORTH
+  ULTRA_HIGH_NET_WORTH
+  BILLIONAIRE
+}
+
+model Client {
+  id                 String        @id @default(cuid())
+  firstName          String
+  lastName           String
+  email              String        @unique
+  phone              String?
+  whatsapp           String?
+  
+  // Wealth & Luxury Tracking
+  wealthTier         WealthTier    @default(HIGH_NET_WORTH)
+  company            String?
+  jobTitle           String?
+  
+  // Deal & Interest Tracking
+  dealStage          DealStage     @default(PROSPECT)
+  realEstateInterest String[]      // e.g. ["PENTHOUSE", "BEACHFRONT_VILLA"]
+  tags               String[]
+  
+  // Relations
+  notes              ClientNote[]
+  meetings           Meeting[]
+  reminders          Reminder[]
+  ownedProperties    Property[]        @relation("PropertyOwner")
+  propertyViewings   PropertyViewing[]
+  
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  deletedAt          DateTime?
+
+  @@index([wealthTier])
+  @@index([dealStage])
+}
+
+model ClientNote {
+  id        String   @id @default(cuid())
+  content   String   @db.Text
+  clientId  String
+  client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Meeting {
+  id          String   @id @default(cuid())
+  title       String
+  date        DateTime
+  location    String?
+  summary     String?  @db.Text
+  clientId    String
+  client      Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Reminder {
+  id          String   @id @default(cuid())
+  title       String
+  dueDate     DateTime
+  isCompleted Boolean  @default(false)
+  clientId    String
+  client      Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// Real Estate Module
+enum PropertyStatus {
+  AVAILABLE
+  UNDER_OFFER
+  SOLD
+  RENTED
+  OFF_MARKET
+}
+
+enum PropertyType {
+  VILLA
+  APARTMENT
+  PENTHOUSE
+  COMMERCIAL
+  TOWNHOUSE
+  LAND
+}
+
+model Property {
+  id          String         @id @default(cuid())
+  title       String
+  description String?        @db.Text
+  address     String
+  city        String?
+  country     String         @default("Lebanon")
+  price       Float
+  
+  status      PropertyStatus @default(AVAILABLE)
+  type        PropertyType
+  
+  bedrooms    Int?
+  bathrooms   Int?
+  sqft        Float?
+  images      String[]
+  
+  // CRM Integration
+  ownerId     String?
+  owner       Client?        @relation("PropertyOwner", fields: [ownerId], references: [id])
+  viewings    PropertyViewing[]
+
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  deletedAt   DateTime?
+
+  @@index([status])
+  @@index([type])
+}
+
+model PropertyViewing {
+  id          String   @id @default(cuid())
+  date        DateTime
+  feedback    String?  @db.Text
+  
+  propertyId  String
+  property    Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  
+  clientId    String
+  client      Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// Finance Module
+enum TransactionType {
+  REVENUE
+  EXPENSE
+  WITHDRAWAL
+  TRANSFER
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+model Transaction {
+  id             String            @id @default(cuid())
+  amount         Float
+  currency       String            @default("USD")
+  type           TransactionType
+  status         TransactionStatus @default(COMPLETED)
+  category       String
+  description    String?
+  
+  // Tracking
+  platformSource String?           // e.g. "Shopify", "Stripe", "Upwork"
+  wishMoneyId    String?           // For Wish Money transfer logging
+  
+  date           DateTime          @default(now())
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  deletedAt      DateTime?
+
+  @@index([type])
+  @@index([status])
+  @@index([date])
+}
+
+// AI Module
+model AIGenerationLog {
+  id             String   @id @default(cuid())
+  provider       String   @default("OPENAI")
+  model          String
+  promptTemplate String
+  inputPayload   Json
+  outputResponse Json
+  promptTokens   Int      @default(0)
+  completionTokens Int    @default(0)
+  totalTokens    Int      @default(0)
+  latencyMs      Int      @default(0)
+  status         String   @default("SUCCESS") // SUCCESS, ERROR
+  errorMessage   String?  @db.Text
+  createdAt      DateTime @default(now())
+}
+
+// Automation & Queue Module
+enum TaskStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum TaskType {
+  EMAIL_SEND
+  WHATSAPP_SEND
+  AI_BACKGROUND_ENRICHMENT
+  DATA_SYNC
+  WEBHOOK_DELIVERY
+}
+
+model SystemTask {
+  id           String     @id @default(cuid())
+  type         TaskType
+  payload      Json
+  status       TaskStatus @default(PENDING)
+  attempts     Int        @default(0)
+  maxAttempts  Int        @default(3)
+  error        String?    @db.Text
+  
+  scheduledFor DateTime   @default(now())
+  completedAt  DateTime?
+  
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+// Notification Module
+enum NotificationType {
+  INFO
+  SUCCESS
+  WARNING
+  ERROR
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  title     String
+  message   String
+  type      NotificationType @default(INFO)
+  isRead    Boolean          @default(false)
+  actionUrl String?
+  
+  createdAt DateTime         @default(now())
+}
+
+// Audit & Observability Module
+model AuditLog {
+  id        String   @id @default(cuid())
+  action    String
+  entity    String
+  entityId  String?
+  actor     String   @default("SYSTEM_ADMIN")
+  payload   Json?
+  
+  createdAt DateTime @default(now())
+
+  @@index([action])
+  @@index([entity])
+  @@index([createdAt])
+}
