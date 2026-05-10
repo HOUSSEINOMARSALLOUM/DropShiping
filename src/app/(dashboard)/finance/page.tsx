@@ -1,86 +1,80 @@
-import { FinanceService } from "@/features/finance/services/finance-service"
-import { FinanceDashboardWidgets } from "@/features/finance/components/finance-dashboard-widgets"
-import { FinanceCharts } from "@/features/finance/components/finance-charts"
-import { TransactionTable } from "@/features/finance/components/transaction-table"
-import { Button } from "@/components/ui/button"
-import Link from "next/link"
-import { Plus, Download } from "lucide-react"
+import { FinanceService } from "@/features/finance/services/finance-service";
+import { FinanceStats } from "@/features/finance/components/finance-stats";
+import { TransactionTable } from "@/features/finance/components/transaction-table";
+import { Button } from "@/components/ui/button";
+import { Plus, Download, Filter, Wallet } from "lucide-react";
 
 export default async function FinancePage() {
-  const transactions = await FinanceService.getAllTransactions()
-  const metrics = await FinanceService.getDashboardMetrics()
+  const [summary, transactions] = await Promise.all([
+    FinanceService.getFinancialSummary(),
+    FinanceService.getTransactions()
+  ]);
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">Financial Overview</h1>
-          <p className="text-zinc-500 dark:text-zinc-400">Track cross-platform revenue, business expenses, and Wish Money transfers.</p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="space-y-1">
+          <h1 className="text-3xl font-bold tracking-tight text-foreground flex items-center gap-3">
+            <Wallet className="h-8 w-8 text-primary" />
+            Financial Ledger
+          </h1>
+          <p className="text-muted-foreground">
+            Unified capital tracking across CRM leads and Real Estate assets.
+          </p>
         </div>
-        
         <div className="flex items-center gap-2">
-          <Button variant="outline" className="border-zinc-200 dark:border-zinc-800 hidden sm:flex">
-            <Download className="w-4 h-4 mr-2" />
-            Export CSV
+          <Button variant="outline" className="bg-card/50">
+            <Download className="mr-2 h-4 w-4" />
+            Export Statement
           </Button>
-          <Button asChild className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-md border-0">
-            <Link href="/finance/new">
-              <Plus className="w-4 h-4 mr-2" />
-              Record Transaction
-            </Link>
+          <Button className="shadow-lg shadow-primary/20">
+            <Plus className="mr-2 h-4 w-4" />
+            Add Transaction
           </Button>
         </div>
       </div>
 
-      <FinanceDashboardWidgets metrics={metrics} />
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 flex">
-          <FinanceCharts data={metrics.chartData} />
-        </div>
-        <div className="lg:col-span-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 shadow-sm flex flex-col">
-          <h3 className="font-semibold text-lg text-zinc-900 dark:text-zinc-50 mb-4">Cash Flow Insights</h3>
-          <div className="space-y-6 flex-1">
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-zinc-500">Shopify Revenue</span>
-                <span className="font-medium">$12,450.00</span>
-              </div>
-              <div className="h-2 w-full bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
-                <div className="h-full bg-emerald-500" style={{ width: '65%' }}></div>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-zinc-500">Stripe Payments</span>
-                <span className="font-medium">$5,230.00</span>
-              </div>
-              <div className="h-2 w-full bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
-                <div className="h-full bg-blue-500" style={{ width: '25%' }}></div>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-zinc-500">Wish Money Transfers</span>
-                <span className="font-medium">$1,890.00</span>
-              </div>
-              <div className="h-2 w-full bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
-                <div className="h-full bg-purple-500" style={{ width: '10%' }}></div>
-              </div>
-            </div>
-          </div>
-          <div className="mt-6 pt-6 border-t border-zinc-200 dark:border-zinc-800 text-sm text-zinc-500">
-            *Insights based on platformSource tracking.
-          </div>
-        </div>
-      </div>
+      <FinanceStats summary={summary} />
 
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="font-semibold text-lg text-zinc-900 dark:text-zinc-50">Recent Transactions</h3>
+          <h2 className="text-lg font-bold tracking-tight">Recent Activity</h2>
+          <Button variant="ghost" size="sm" className="text-muted-foreground">
+            <Filter className="mr-2 h-3.5 w-3.5" />
+            Category
+          </Button>
         </div>
         <TransactionTable transactions={transactions as any} />
       </div>
+
+      {/* Analytics-Ready Forecasting Placeholder */}
+      <div className="grid gap-6 md:grid-cols-2">
+        <div className="p-6 rounded-2xl bg-card/30 border border-primary/5 space-y-4">
+          <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Cash Flow Forecast</h3>
+          <div className="h-[120px] flex items-center justify-center border border-dashed border-primary/10 rounded-xl bg-background/50 text-muted-foreground text-xs">
+            Integrated forecasting model pending historical data accumulation...
+          </div>
+        </div>
+        <div className="p-6 rounded-2xl bg-card/30 border border-primary/5 space-y-4">
+          <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Attribution Analysis</h3>
+          <div className="space-y-3">
+            <div className="flex justify-between items-center text-xs">
+              <span>Real Estate Commission</span>
+              <span className="font-bold">64%</span>
+            </div>
+            <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+              <div className="h-full bg-primary w-[64%]" />
+            </div>
+            <div className="flex justify-between items-center text-xs">
+              <span>CRM Consultation</span>
+              <span className="font-bold">22%</span>
+            </div>
+            <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+              <div className="h-full bg-violet-500 w-[22%]" />
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
-  )
+  );
 }

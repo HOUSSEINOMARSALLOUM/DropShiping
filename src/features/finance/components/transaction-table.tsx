@@ -1,91 +1,85 @@
-"use client"
+"use client";
 
-import { Transaction } from "../types"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { deleteTransactionAction } from "../actions"
-import { Trash2 } from "lucide-react"
+import { Transaction, Contact, Deal, Property } from "@prisma/client";
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { format } from "date-fns";
+import { ArrowUpRight, ArrowDownLeft, Receipt, User, Home } from "lucide-react";
 
-export function TransactionTable({ transactions }: { transactions: Transaction[] }) {
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value)
-  }
+interface TransactionWithExtras extends Transaction {
+  contact: Contact | null;
+  deal: (Deal & { property: Property }) | null;
+}
 
-  const getTypeBadge = (type: string) => {
-    switch(type) {
-      case 'REVENUE': return <Badge className="bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 border-0">Revenue</Badge>
-      case 'EXPENSE': return <Badge className="bg-red-500/10 text-red-600 hover:bg-red-500/20 border-0">Expense</Badge>
-      case 'WITHDRAWAL': return <Badge className="bg-orange-500/10 text-orange-600 hover:bg-orange-500/20 border-0">Withdrawal</Badge>
-      case 'TRANSFER': return <Badge className="bg-blue-500/10 text-blue-600 hover:bg-blue-500/20 border-0">Transfer</Badge>
-      default: return <Badge variant="outline">{type}</Badge>
-    }
-  }
-
-  const getStatusBadge = (status: string) => {
-    switch(status) {
-      case 'COMPLETED': return <Badge variant="outline" className="border-emerald-500 text-emerald-500">Completed</Badge>
-      case 'PENDING': return <Badge variant="outline" className="border-amber-500 text-amber-500">Pending</Badge>
-      case 'FAILED': return <Badge variant="outline" className="border-red-500 text-red-500">Failed</Badge>
-      default: return null
-    }
-  }
-
+export function TransactionTable({ transactions }: { transactions: TransactionWithExtras[] }) {
   return (
-    <div className="rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-sm overflow-hidden">
+    <div className="rounded-xl border border-primary/5 bg-card/40 overflow-hidden">
       <Table>
-        <TableHeader className="bg-zinc-50 dark:bg-zinc-900/50">
+        <TableHeader className="bg-primary/5">
           <TableRow>
-            <TableHead>Date</TableHead>
-            <TableHead>Description</TableHead>
-            <TableHead>Category</TableHead>
-            <TableHead>Source / ID</TableHead>
-            <TableHead>Type</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead className="text-right">Amount</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
+            <TableHead className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Entity</TableHead>
+            <TableHead className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Category</TableHead>
+            <TableHead className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground text-right">Amount</TableHead>
+            <TableHead className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Status/Ref</TableHead>
+            <TableHead className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Date</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {transactions.map((t) => (
-            <TableRow key={t.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors">
-              <TableCell className="text-zinc-500 dark:text-zinc-400">
-                {t.date.toLocaleDateString()}
+            <TableRow key={t.id} className="hover:bg-primary/5 transition-colors border-primary/5">
+              <TableCell>
+                <div className="flex flex-col gap-0.5">
+                  {t.contact && (
+                    <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
+                      <User className="h-3 w-3 text-muted-foreground" />
+                      {t.contact.firstName} {t.contact.lastName}
+                    </div>
+                  )}
+                  {t.deal && (
+                    <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                      <Home className="h-3 w-3" />
+                      {t.deal.property.title}
+                    </div>
+                  )}
+                  {!t.contact && !t.deal && (
+                    <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground italic">
+                      <Receipt className="h-3 w-3 text-muted-foreground" />
+                      Operational
+                    </div>
+                  )}
+                </div>
               </TableCell>
-              <TableCell className="font-medium text-zinc-900 dark:text-zinc-50">
-                {t.description || "N/A"}
+              <TableCell>
+                <Badge variant="outline" className="bg-background/50 border-primary/10 text-[10px] font-bold uppercase">
+                  {t.category}
+                </Badge>
               </TableCell>
-              <TableCell className="text-zinc-500 dark:text-zinc-400">{t.category}</TableCell>
-              <TableCell className="text-zinc-500 dark:text-zinc-400 text-xs">
-                {t.platformSource && <div>Source: {t.platformSource}</div>}
-                {t.wishMoneyId && <div>Wish ID: {t.wishMoneyId}</div>}
+              <TableCell className="text-right font-mono font-bold">
+                <span className={t.type === 'INCOME' ? 'text-emerald-500' : 'text-orange-500'}>
+                  {t.type === 'INCOME' ? '+' : '-'}${Number(t.amount).toLocaleString()}
+                </span>
               </TableCell>
-              <TableCell>{getTypeBadge(t.type)}</TableCell>
-              <TableCell>{getStatusBadge(t.status)}</TableCell>
-              <TableCell className={`text-right font-medium ${t.type === 'REVENUE' ? 'text-emerald-600' : t.type === 'EXPENSE' ? 'text-red-600' : 'text-zinc-900 dark:text-zinc-50'}`}>
-                {t.type === 'EXPENSE' || t.type === 'WITHDRAWAL' ? '-' : '+'}{formatCurrency(t.amount)}
+              <TableCell>
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-bold text-muted-foreground truncate max-w-[120px]">
+                    {t.reference || "Internal"}
+                  </span>
+                </div>
               </TableCell>
-              <TableCell className="text-right">
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950 h-8 w-8"
-                  onClick={() => deleteTransactionAction(t.id)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+              <TableCell className="text-[10px] font-medium text-muted-foreground uppercase">
+                {format(new Date(t.createdAt), "MMM dd, yyyy")}
               </TableCell>
             </TableRow>
           ))}
-          {transactions.length === 0 && (
-            <TableRow>
-              <TableCell colSpan={8} className="text-center text-zinc-500 py-8">
-                No transactions recorded yet.
-              </TableCell>
-            </TableRow>
-          )}
         </TableBody>
       </Table>
     </div>
-  )
+  );
 }

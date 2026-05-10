@@ -1,30 +1,46 @@
-import { z } from "zod"
+import { z } from "zod";
 
 const envSchema = z.object({
-  // Database
-  DATABASE_URL: z.string().url("Must be a valid Postgres connection string"),
+  // CORE
+  DATABASE_URL: z.string().url(),
+  NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+  NEXT_PUBLIC_APP_URL: z.string().url().default("http://localhost:3000"),
   
-  // Security
-  AUTH_SECRET: z.string().min(32, "Auth secret must be at least 32 characters"),
+  // AUTH
+  AUTH_SECRET: z.string().min(1),
   
-  // Integration API Keys
+  // AI
   OPENAI_API_KEY: z.string().optional(),
+  
+  // INTEGRATIONS
   RESEND_API_KEY: z.string().optional(),
+  STRIPE_SECRET_KEY: z.string().optional(),
+  STRIPE_WEBHOOK_SECRET: z.string().optional(),
   
-  // App Config
-  NODE_ENV: z.enum(['development', 'staging', 'production']).default('development'),
-  NEXT_PUBLIC_APP_URL: z.string().url().default('http://localhost:3000'),
-  
-  // Cost Controls
-  MAX_MONTHLY_AI_TOKENS: z.coerce.number().default(1000000),
-})
+  // SAFETY & GATING
+  DEPLOYMENT_SAFE_MODE: z.enum(["true", "false"]).default("true"),
+  SYSTEM_ENVIRONMENT: z.enum(["local", "staging", "production"]).default("local"),
+});
 
-export const env = envSchema.parse({
-  DATABASE_URL: process.env.DATABASE_URL,
-  AUTH_SECRET: process.env.AUTH_SECRET,
-  OPENAI_API_KEY: process.env.OPENAI_API_KEY,
-  RESEND_API_KEY: process.env.RESEND_API_KEY,
-  NODE_ENV: process.env.NODE_ENV,
-  NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
-  MAX_MONTHLY_AI_TOKENS: process.env.MAX_MONTHLY_AI_TOKENS,
-})
+const _env = envSchema.safeParse(process.env);
+
+if (!_env.success) {
+  if (process.env.NODE_ENV !== "production") {
+    console.error("❌ Invalid environment variables:", _env.error.format());
+  }
+  throw new Error("Invalid environment variables");
+}
+
+export const env = _env.data;
+
+/**
+ * Deployment Gating Utility
+ * Blocks external API calls and sensitive side-effects in safe-mode.
+ */
+export const isDeploymentSafe = () => {
+  return env.DEPLOYMENT_SAFE_MODE === "true" && env.SYSTEM_ENVIRONMENT !== "production";
+};
+
+export const canProcessWebhooks = () => {
+  return env.SYSTEM_ENVIRONMENT === "production" || env.DEPLOYMENT_SAFE_MODE === "false";
+};

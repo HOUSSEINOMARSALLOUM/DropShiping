@@ -1,112 +1,105 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { cn } from "@/lib/utils"
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
-  ShoppingCart,
   Users,
-  Building2,
-  Wallet,
-  Bot,
-  BarChart3,
   Settings,
-  LogOut
-} from "lucide-react"
+  CreditCard,
+  Briefcase,
+  Activity,
+  Bot
+} from "lucide-react";
+
+interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {}
 
 const routes = [
   {
     label: "Dashboard",
     icon: LayoutDashboard,
-    href: "/",
+    href: "/dashboard",
     color: "text-sky-500",
   },
   {
-    label: "Dropshipping",
-    icon: ShoppingCart,
-    href: "/dropshipping",
+    label: "Automation AI",
+    icon: Bot,
+    href: "/automation",
     color: "text-violet-500",
   },
   {
     label: "CRM",
     icon: Users,
     href: "/crm",
-    color: "text-pink-700",
+    color: "text-pink-500",
   },
   {
-    label: "Real Estate",
-    icon: Building2,
-    href: "/real-estate",
-    color: "text-orange-700",
+    label: "Projects",
+    icon: Briefcase,
+    href: "/projects",
+    color: "text-orange-500",
   },
   {
     label: "Finance",
-    icon: Wallet,
+    icon: CreditCard,
     href: "/finance",
     color: "text-emerald-500",
   },
   {
-    label: "AI Automations",
-    icon: Bot,
-    href: "/ai",
-    color: "text-green-700",
+    label: "Analytics",
+    icon: Activity,
+    href: "/analytics",
+    color: "text-yellow-500",
   },
   {
-    label: "Analytics",
-    icon: BarChart3,
-    href: "/analytics",
-    color: "text-white",
+    label: "Settings",
+    icon: Settings,
+    href: "/settings",
+    color: "text-gray-400",
   },
-]
+];
 
-export function Sidebar() {
-  const pathname = usePathname()
+export function Sidebar({ className }: SidebarProps) {
+  const pathname = usePathname();
 
   return (
-    <div className="flex flex-col h-full bg-zinc-900 text-white w-64 border-r border-zinc-800 transition-all duration-300">
-      <div className="p-6">
-        <Link href="/" className="flex items-center gap-2">
-          <div className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-lg p-2">
-            <LayoutDashboard className="h-6 w-6 text-white" />
+    <div className={cn("space-y-4 py-4 flex flex-col h-full", className)}>
+      <div className="px-3 py-2 flex-1">
+        <Link href="/dashboard" className="flex items-center pl-3 mb-14">
+          <div className="relative w-8 h-8 mr-4 bg-primary rounded-lg flex items-center justify-center">
+            <Bot className="w-5 h-5 text-primary-foreground" />
           </div>
-          <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-cyan-400">
-            Nexus OS
+          <h1 className="text-2xl font-bold tracking-tight">
+            Nexus <span className="text-primary">OS</span>
           </h1>
         </Link>
+        <div className="space-y-1">
+          {routes.map((route) => (
+            <Link
+              key={route.href}
+              href={route.href}
+              className={cn(
+                "text-sm group flex p-3 w-full justify-start font-medium cursor-pointer hover:text-primary hover:bg-primary/10 rounded-lg transition-all",
+                pathname === route.href || pathname.startsWith(`${route.href}/`)
+                  ? "bg-primary/10 text-primary"
+                  : "text-muted-foreground"
+              )}
+            >
+              <div className="flex items-center flex-1">
+                <route.icon className={cn("h-5 w-5 mr-3", route.color)} />
+                {route.label}
+              </div>
+            </Link>
+          ))}
+        </div>
       </div>
-
-      <div className="flex-1 px-4 py-2 space-y-1 overflow-y-auto">
-        {routes.map((route) => (
-          <Link
-            key={route.href}
-            href={route.href}
-            className={cn(
-              "flex items-center gap-3 px-3 py-3 rounded-lg transition-all duration-200 group hover:bg-zinc-800/50",
-              pathname === route.href ? "bg-zinc-800 text-white" : "text-zinc-400"
-            )}
-          >
-            <route.icon className={cn("h-5 w-5", route.color)} />
-            <span className="font-medium">{route.label}</span>
-          </Link>
-        ))}
-      </div>
-
-      <div className="p-4 border-t border-zinc-800">
-        <Link
-          href="/settings"
-          className="flex items-center gap-3 px-3 py-3 rounded-lg transition-all duration-200 text-zinc-400 hover:bg-zinc-800/50 hover:text-white"
-        >
-          <Settings className="h-5 w-5" />
-          <span className="font-medium">Settings</span>
-        </Link>
-        <button
-          className="flex items-center gap-3 px-3 py-3 w-full rounded-lg transition-all duration-200 text-zinc-400 hover:bg-red-500/10 hover:text-red-500 mt-1"
-        >
-          <LogOut className="h-5 w-5" />
-          <span className="font-medium">Logout</span>
-        </button>
+      <div className="px-6 py-4 mt-auto border-t border-border">
+        <div className="flex items-center gap-3">
+          <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+          <span className="text-xs text-muted-foreground font-medium">System Online</span>
+        </div>
       </div>
     </div>
-  )
+  );
 }

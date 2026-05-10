@@ -1,23 +1,33 @@
-import { Suspense } from "react"
-import { Sidebar } from "@/components/layout/sidebar"
-import { Header } from "@/components/layout/header"
+import { ReactNode } from "react";
+import { Sidebar } from "@/components/layout/sidebar";
+import { UserNav } from "@/components/layout/user-nav";
+import { MobileNav } from "@/components/layout/mobile-nav";
+import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 
 export default function DashboardLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: ReactNode;
 }) {
   return (
-    <div className="flex h-screen overflow-hidden bg-zinc-50 dark:bg-zinc-950">
-      <Sidebar />
+    <div className="flex min-h-screen bg-background text-foreground">
+      <Sidebar className="hidden lg:flex w-72 border-r bg-card/50 backdrop-blur-xl h-screen sticky top-0" />
       <div className="flex flex-1 flex-col overflow-hidden">
-        <Header />
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
-          <Suspense fallback={<div>Loading...</div>}>
+        <header className="sticky top-0 z-50 flex h-16 items-center justify-between border-b bg-background/80 px-6 backdrop-blur-md">
+          <div className="flex items-center gap-4">
+            <MobileNav />
+            <Breadcrumbs className="hidden md:flex" />
+          </div>
+          <div className="flex items-center gap-4">
+            <UserNav />
+          </div>
+        </header>
+        <main className="flex-1 overflow-y-auto p-6 md:p-8">
+          <div className="mx-auto max-w-7xl">
             {children}
-          </Suspense>
+          </div>
         </main>
       </div>
     </div>
-  )
+  );
 }

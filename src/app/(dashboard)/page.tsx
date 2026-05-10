@@ -1,108 +1,133 @@
-import { 
-  TrendingUp, 
-  Users, 
-  ShoppingCart, 
-  DollarSign, 
-  ArrowUpRight, 
-  ArrowDownRight 
-} from "lucide-react"
+import { AnalyticsService } from "@/features/analytics/services/analytics-service";
+import { AIService } from "@/features/ai/services/ai-service";
+import { FinanceService } from "@/features/finance/services/finance-service";
+import { RealEstateService } from "@/features/real-estate/services/real-estate-service";
+import { ContactService } from "@/features/crm/services/contact-service";
+import { WorkerService } from "@/features/infrastructure/services/worker-service";
+import { NotificationService } from "@/features/automation/services/notification-service";
+import { db } from "@/lib/db";
 
-export default function DashboardPage() {
+import { GlobalStatusBar } from "@/features/dashboard/components/global-status";
+import { AIExecutiveBrief } from "@/features/dashboard/components/ai-brief";
+import { CRMAlerts } from "@/features/dashboard/components/crm-alerts";
+import { FinanceSnapshot } from "@/features/dashboard/components/finance-snapshot";
+import { DealsPipeline } from "@/features/dashboard/components/deals-pipeline";
+import { ActivityStream } from "@/features/dashboard/components/activity-stream";
+
+import { Button } from "@/components/ui/button";
+import { Command, LayoutDashboard, RefreshCcw } from "lucide-react";
+
+export default async function ExecutiveCommandCenter() {
+  // Aggregate data using existing service layer (Server-first fetching)
+  const [
+    intel,
+    financeSummary,
+    pipeline,
+    contacts,
+    health,
+    unreadCount,
+    recentActivities,
+  ] = await Promise.all([
+    AnalyticsService.getExecutiveIntelligence(),
+    FinanceService.getFinancialSummary(),
+    RealEstateService.getPipeline(),
+    ContactService.getAll(),
+    WorkerService.getWorkerHealth(),
+    NotificationService.getUnreadCount(),
+    db.activity.findMany({ 
+      orderBy: { createdAt: "desc" }, 
+      take: 20,
+      include: { contact: true }
+    })
+  ]);
+
+  // Generate briefing with analytics context
+  const briefingResponse = await AIService.generateExecutiveBriefing(intel);
+
+  const statusData = {
+    health: health.status as "HEALTHY" | "DEGRADED",
+    revenue: financeSummary.totalRevenue,
+    aiCost: briefingResponse.usage.estimatedCost,
+    alertCount: unreadCount
+  };
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">Dashboard Overview</h2>
-        <p className="text-zinc-500 dark:text-zinc-400">Welcome back, Admin. Here's what's happening today.</p>
+    <div className="space-y-6 pb-12">
+      {/* Header & Meta Actions */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="space-y-1">
+          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
+            <LayoutDashboard className="h-8 w-8 text-primary" />
+            Executive Command Center
+          </h1>
+          <p className="text-muted-foreground">
+            Unified real-time operational oversight across all business domains.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" className="bg-card/40 border-primary/10">
+            <RefreshCcw className="mr-2 h-3.5 w-3.5 opacity-50" />
+            Full Re-Sync
+          </Button>
+          <Button size="sm" className="shadow-lg shadow-primary/20 bg-primary hover:bg-primary/90">
+            <Command className="mr-2 h-4 w-4" />
+            Operational Actions
+          </Button>
+        </div>
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <KPICard 
-          title="Total Revenue" 
-          value="$45,231.89" 
-          trend="+20.1% from last month" 
-          icon={<DollarSign className="h-4 w-4 text-zinc-500" />}
-          positive={true}
-        />
-        <KPICard 
-          title="Active Users" 
-          value="2,350" 
-          trend="+180 from last month" 
-          icon={<Users className="h-4 w-4 text-zinc-500" />}
-          positive={true}
-        />
-        <KPICard 
-          title="Sales" 
-          value="+12,234" 
-          trend="+19% from last month" 
-          icon={<ShoppingCart className="h-4 w-4 text-zinc-500" />}
-          positive={true}
-        />
-        <KPICard 
-          title="Active Now" 
-          value="573" 
-          trend="-201 since last hour" 
-          icon={<TrendingUp className="h-4 w-4 text-zinc-500" />}
-          positive={false}
-        />
-      </div>
+      {/* A. Global Status Bar */}
+      <GlobalStatusBar data={statusData} />
 
-      <div className="grid grid-cols-1 lg:grid-cols-7 gap-6">
-        {/* Main Chart Area */}
-        <div className="lg:col-span-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-lg text-zinc-900 dark:text-zinc-50">Revenue Overview</h3>
-          </div>
-          <div className="h-[300px] flex items-center justify-center border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-500">
-            [Chart Area Placeholder]
-          </div>
+      {/* 6-Panel Executive Grid */}
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {/* B. AI Executive Brief */}
+        <div className="lg:col-span-1">
+          <AIExecutiveBrief briefing={briefingResponse.data} />
         </div>
 
-        {/* Recent Activity Area */}
-        <div className="lg:col-span-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-lg text-zinc-900 dark:text-zinc-50">Recent Activity</h3>
+        {/* C. CRM Alerts */}
+        <div className="lg:col-span-1">
+          <CRMAlerts contacts={contacts as any} />
+        </div>
+
+        {/* D. Finance Snapshot */}
+        <div className="lg:col-span-1">
+          <FinanceSnapshot summary={financeSummary} />
+        </div>
+
+        {/* E. Deals Pipeline */}
+        <div className="lg:col-span-1">
+          <DealsPipeline deals={pipeline as any} />
+        </div>
+
+        {/* F. Activity Stream */}
+        <div className="lg:col-span-2">
+          <ActivityStream activities={recentActivities} />
+        </div>
+      </div>
+
+      {/* Analytics Attribution Hook */}
+      <div className="grid gap-6 md:grid-cols-2">
+        <div className="p-6 rounded-2xl bg-primary/5 border border-primary/10 flex items-center justify-between">
+          <div className="space-y-1">
+            <p className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Strategic Readiness</p>
+            <p className="text-xs text-muted-foreground">System is operating at peak efficiency across 4 domains.</p>
           </div>
-          <div className="space-y-6">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="flex items-center">
-                <div className="h-9 w-9 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center mr-4">
-                  <div className="h-2 w-2 rounded-full bg-indigo-500" />
-                </div>
-                <div className="space-y-1">
-                  <p className="text-sm font-medium leading-none text-zinc-900 dark:text-zinc-50">
-                    New order placed #{1000 + i}
-                  </p>
-                  <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                    Customer {i} purchased a product.
-                  </p>
-                </div>
-                <div className="ml-auto font-medium text-sm text-zinc-900 dark:text-zinc-50">
-                  +$2{i}9.00
-                </div>
-              </div>
-            ))}
+          <div className="h-10 w-10 rounded-full border-2 border-primary/20 flex items-center justify-center">
+            <span className="text-xs font-bold text-primary">94%</span>
+          </div>
+        </div>
+        <div className="p-6 rounded-2xl bg-violet-500/5 border border-violet-500/10 flex items-center justify-between">
+          <div className="space-y-1">
+            <p className="text-sm font-bold uppercase tracking-widest text-muted-foreground">AI Intelligence Gain</p>
+            <p className="text-xs text-muted-foreground">Automated lead scoring and revenue forecasting enabled.</p>
+          </div>
+          <div className="h-10 w-10 rounded-full border-2 border-violet-500/20 flex items-center justify-center">
+            <span className="text-xs font-bold text-violet-500">+12%</span>
           </div>
         </div>
       </div>
     </div>
-  )
-}
-
-function KPICard({ title, value, trend, icon, positive }: { title: string, value: string, trend: string, icon: React.ReactNode, positive: boolean }) {
-  return (
-    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-200">
-      <div className="flex flex-row items-center justify-between pb-2">
-        <h3 className="tracking-tight text-sm font-medium text-zinc-500 dark:text-zinc-400">{title}</h3>
-        {icon}
-      </div>
-      <div>
-        <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">{value}</div>
-        <p className={`text-xs mt-1 flex items-center ${positive ? 'text-emerald-500' : 'text-red-500'}`}>
-          {positive ? <ArrowUpRight className="h-3 w-3 mr-1" /> : <ArrowDownRight className="h-3 w-3 mr-1" />}
-          {trend}
-        </p>
-      </div>
-    </div>
-  )
+  );
 }
