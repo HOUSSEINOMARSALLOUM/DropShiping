@@ -5,7 +5,7 @@ import { RealEstateService } from "@/features/real-estate/services/real-estate-s
 import { ContactService } from "@/features/crm/services/contact-service";
 import { WorkerService } from "@/features/infrastructure/services/worker-service";
 import { NotificationService } from "@/features/automation/services/notification-service";
-import { db } from "@/lib/db";
+import { db } from "@/infrastructure/db/db";
 
 import { GlobalStatusBar } from "@/features/dashboard/components/global-status";
 import { AIExecutiveBrief } from "@/features/dashboard/components/ai-brief";

@@ -16,7 +16,11 @@ async function main() {
       phone: '+961 70 123456',
       status: ContactStatus.PROSPECT,
       isVip: true,
-      notes: 'Strategic partner for Gulf expansion.',
+      notes: {
+        create: {
+          content: 'Strategic partner for Gulf expansion.'
+        }
+      },
     },
   })
 
@@ -28,15 +32,12 @@ async function main() {
       price: 2450000,
       type: 'RESIDENTIAL',
       status: PropertyStatus.AVAILABLE,
-      sqm: 450,
-      bedrooms: 4,
     }
   })
 
   // 3. Create Sample Deal
   const deal1 = await prisma.deal.create({
     data: {
-      title: 'Marina Penthouse Acquisition',
       value: 2450000,
       stage: 'NEGOTIATION',
       status: DealStatus.PIPELINE,
